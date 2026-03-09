@@ -21,3 +21,4 @@ streamlit
 joblib
 fastparquet
 pyarrow
+tabulate
