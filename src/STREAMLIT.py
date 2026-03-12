@@ -144,7 +144,6 @@ if st.button("Analyze Order Risk"):
         
     with col2:
         if prediction == 1:
-            st.metric("probability of delay:", f"{prob}")
             st.markdown("<br>", unsafe_allow_html=True) # Adds a HTML break
             st.error("Status: LATE EXPECTED")
         else:
