@@ -11,9 +11,9 @@ import joblib
 # PAGE CONFIG
 # -------------------------
 st.set_page_config(
-    page_title="Supply Chain ML Dashboard",
-    layout="wide",
-    page_icon="📦"
+    page_title= "Supply Chain ML Dashboard",
+    layout= "wide",
+    page_icon= "📦"
 )
 
 # -------------------------
@@ -115,69 +115,66 @@ st.markdown(
 # -------------------------
 # SIDEBAR INPUTS
 # -------------------------
-st.sidebar.header("📥 Input Order Data")
+st.sidebar.header("Input Order Data")
 st.sidebar.header("Step 1: Order Logistics")
-# 1. País primero
+# 1. Country first
 Customer_Country, Customer_Country_num = select_from_mapping("Origin Country", mappings["Customer_Country"])
 
-# 2. Ciudades disponibles según país
+# 2. Available cities per country
 available_cities2 = country_to_cities.get(Customer_Country, [])
 
-# 3. Filtrar contra las ciudades reales del mapping
+# 3. Filter against the actual cities in the mapping
 filtered_order_cities2 = [
     city for city in available_cities2
     if city in mappings["Customer_City"]
 ]
 
-# 4. Selector de ciudad
-if filtered_order_cities2:
-    Customer_City, Customer_City_num = select_from_list("Origin City", filtered_order_cities2)
-else:
-    st.sidebar.warning(f"No hay ciudades mapeadas para {Customer_Country}. Se muestran todas.")
-    Customer_City, Customer_City_num = select_from_list("Origin City", mappings["Customer_City"])
+# 4. City Selector
+# if filtered_order_cities2:
+#    Customer_City, Customer_City_num = select_from_list("Origin City", filtered_order_cities2)
+# else:
+#   st.sidebar.warning(f" There are no cities mapped for {Customer_Country}. All cities are displayed.")
+#   Customer_City, Customer_City_num = select_from_list("Origin City", mappings["Customer_City"])
 
 
 
 shipping_day, shipping_day_num = select_from_mapping("Shipment Day", mappings["shipping_day"])
 
-shipping_mode_map = {0:"Standard Class",1:"Second Class",2:"First Class",3:"Same Day"}
+shipping_mode_map = {0: "Standard Class",1: "Second Class",2: "First Class",3: "Same Day"}
 Shipping_Mode = st.sidebar.selectbox("Shipping Mode", list(shipping_mode_map.values()))
 Shipping_Mode_num = [k for k,v in shipping_mode_map.items() if v == Shipping_Mode][0]
 
 
 st.sidebar.header("Step 2: Product & Payment")
 Category_Name, Category_Name_num = select_from_mapping("Category", mappings["Category_Name"])
-type_map = {0:"DEBIT",1:"TRANSFER",2:"CASH",3:"PAYMENT",4:"CREDIT"}
+type_map = {0: "DEBIT",1: "TRANSFER",2: "CASH",3: "PAYMENT",4: "CREDIT"}
 Type = st.sidebar.selectbox("Payment Type", list(type_map.values()))
 Type_num = [k for k,v in type_map.items() if v == Type][0]
 
 st.sidebar.header("Step 3: Constraints")
-Days_for_shipment_scheduled = st.sidebar.slider("Scheduled Days",1,10,3)
-Price_Per_Unit = st.sidebar.number_input("Unit Price ($)", value=150.0)
-Benefit_per_order = st.sidebar.number_input("Expected Benefit ($)", value=50.0)
+Days_for_shipment_scheduled = st.sidebar.slider("Scheduled Days",1,6,3)
+Price_Per_Unit = st.sidebar.number_input("Unit Price ($)", value= 150.0)
+Benefit_per_order = st.sidebar.number_input("Expected Benefit ($)", value= 50.0)
 
 st.sidebar.header("Step 4: Shipping info")
-# 1. País primero
+# 1. Country first
 Order_Country, Order_Country_num = select_from_mapping("Order Country", mappings["Order_Country"])
 
-# 2. Ciudades disponibles según país
+# 2. Available cities per country
 available_cities = country_to_cities.get(Order_Country, [])
 
-# 3. Filtrar contra las ciudades reales del mapping
+# 3. Filter against the actual cities in the mapping
 filtered_order_cities = [
     city for city in available_cities
     if city in mappings["Order_City"]
 ]
 
-# 4. Selector de ciudad
+# 4. City Selector
 if filtered_order_cities:
     Order_City, Order_City_num = select_from_list("Order City", filtered_order_cities)
 else:
-    st.sidebar.warning(f"No hay ciudades mapeadas para {Order_Country}. Se muestran todas.")
+    st.sidebar.warning(f" There are no cities mapped for {Order_Country}. All cities are displayed.")
     Order_City, Order_City_num = select_from_list("Order City", mappings["Order_City"])
-
-
-Order_Status, Order_Status_num = select_from_mapping("Order Status", mappings["Order_Status"])
 
 
 #---------
@@ -186,7 +183,7 @@ Order_Status, Order_Status_num = select_from_mapping("Order Status", mappings["O
 
 #-----------
 
-predict_button = st.sidebar.button("🚀 Run Prediction")
+predict_button = st.sidebar.button("Run Prediction")
 
 predictors = [
     'Days_for_shipment_scheduled', 'Benefit_per_order', 'Order_Item_Discount', 
@@ -197,7 +194,36 @@ predictors = [
     'Shipping_Mode_num', 'Customer_Zipcode_num', 'shipping_day_num', 
     'shipping_month_num', 'Price_Per_Unit', 'Logistics_Corridor_ID'
 ]
-input_data2 = pd.DataFrame(np.zeros((1, len(predictors))), columns= predictors)
+
+# Create the input row. 
+# We use Sidebar Variables for user choices and YOUR MEDIANS for the rest.
+input_values = [
+    Days_for_shipment_scheduled,      # User Input
+    Benefit_per_order,                # User Input
+    14.0,                             # Median Order_Item_Discount
+    0.1,                              # Median Order_Item_Discount_Rate
+    0.27,                             # Median Order_Item_Profit_Ratio
+    1.0,                              # Median Order_Item_Quantity
+    Type_num,                         # User Input
+    Category_Name_num,                # User Input
+    61.0,                             # Median Customer_City_num
+    1.0,                              # Median Customer_Country_num
+    0.0,                              # Median Customer_Segment_num
+    1.0,                              # Median Customer_State_num
+    3.0,                              # Median Department_Name_num
+    Order_City_num,                   # User Input
+    18.0,                             # Median Order_Country_num
+    119.0,                            # Median Order_State_num
+    2.0,                              # Median Order_Status_num
+    Shipping_Mode_num,                # User Input
+    176.0,                            # Median Customer_Zipcode_num
+    shipping_day,                     # User Input
+    6.0,                              # Median shipping_month_num
+    Price_Per_Unit,                   # User Input
+    310.0                             # Median Logistics_Corridor_ID
+]
+
+input_data2 = pd.DataFrame([input_values], columns= predictors)
 input_data2['Days_for_shipment_scheduled'] = Days_for_shipment_scheduled
 input_data2['Benefit_per_order'] = Benefit_per_order
 input_data2['Price_Per_Unit'] = Price_Per_Unit
@@ -206,7 +232,7 @@ input_data2['shipping_day_num'] = shipping_day_num
 input_data2['Type_num'] = Type_num
 input_data2['Order_City_num'] = Order_City_num
 input_data2['Category_Name_num'] = Category_Name_num
-input_data2['Order_Status_num'] = Order_Status_num
+
 cluster_status = {
     0: "🟡 Moderate Risk (Standard)",
     1: "🟢 Low Risk (Optimal)",
@@ -225,9 +251,9 @@ if predict_button:
 
     # 4. Interactive UI display
     st.divider()
-    # Bloque de probabilidad y estado
+    # Probability block and status
     with st.container():
-        col1, col2 = st.columns([1, 2])  # Col2 más ancho
+        col1, col2 = st.columns([1, 2])
     with col1:
         st.metric("Late Risk Probability", f"{prob * 100:.1f}%")
     with col2:
@@ -236,37 +262,51 @@ if predict_button:
         else:
             st.success("Status: ON TIME")
 
-    # Bloque de perfil logístico
-    
+    # Logistic Profile Block
     if prediction == 0:
-        st.info(
-            "**Congrats**: The current scheduling window is optimal. This order is highly likely to meet its deadline.")
-
+        st.info("**Congrats**: The current scheduling window is optimal. This order is highly likely to meet its deadline.")
     else:
         with st.container():
             st.metric("Logistic Profile", readable_cluster)
-        if cluster == 2:
-            st.warning(
-                "**Strategic Insight**: This order is being promised too fast for our current logistics capacity. Recommend increasing the scheduled days to at least 3."
-            )
-            st.subheader("Strategic Recommendation")
-            st.error("Action Required: Reschedule Order")
-            st.write(f"The current promise of **{scheduled_days} day(s)** is physically impossible for our current logistics to {selected_city}.")
-        
-            # Calculate the 'Safe' target
-            suggested_days = 4 # Based on Cluster 1 average
-            additional_days = suggested_days - scheduled_days
-        
-            st.info(f"**To move this to 'Low Risk' (Cluster 1):** Increase the 'Scheduled Days' to **{suggested_days}**. "
-                f"This adds {additional_days} day(s) to the customer promise but ensures an 85%+ on-time delivery rate.")
-            
-        elif cluster == 1:
-            st.info(
-             "**Optimization Tip**: This profile is highly efficient. Continue using these parameters for this route."
-        )
+        st.divider()
         st.subheader("Strategic Recommendation")
-        st.warning("Action Recommended: Review Buffer")
-        st.write("This order is in the 'Moderate' zone. Adding **1 extra day** to the schedule would likely shift this into the 'Low Risk' green zone.")
+
+        # If the probability is safe, that is the primary recommendation
+        if prob < 0.3:
+            st.success("No Action Needed")
+            st.write(f"The updated schedule of **{scheduled_days} day(s)** has successfully lowered the risk. This order is now safe to process.")
+        
+        # If the probability is high, we must suggest a change, even for "Optimal" clusters
+        elif prob >= 0.5:
+            if cluster == 2:
+                st.error("Action Required: Reschedule Order")
+                st.write(f"The current promise of **{Days_for_shipment_scheduled} day(s)** is physically impossible for our current logistics to {Order_City}.")
+                st.info(f"**To move this to 'Low Risk':** Increase 'Scheduled Days' to **4**.")
+            else:
+                st.warning("Action Recommended: Increase Buffer")
+                st.write(f"Even though {Order_City} usually performs well, a **{Days_for_shipment_scheduled}-day** window is too narrow for this shipping mode.")
+                st.info("Recommendation: Add at least **1 additional day** to the delivery promise.")
+        else:
+            st.success("Optimal Parameters")
+            st.write("The current parameters are efficient. No changes required.")
+#         if cluster == 2:
+# #           st.warning("**Strategic Insight**: This order is being promised too fast for our current logistics capacity. Recommend increasing the scheduled days to at least 3.")
+#             st.subheader("Strategic Recommendation")
+#             st.error("Action Required: Reschedule Order")
+#             st.write(f"The current promise of **{Days_for_shipment_scheduled} day(s)** is physically impossible for our current logistics to {Order_City}.")
+        
+#             # Calculate the 'Safe' target
+#             suggested_days = 4 # Based on Cluster 1 average
+#             additional_days = suggested_days - Days_for_shipment_scheduled
+        
+#             st.info(f"**To move this to 'Low Risk' (Cluster 1):** Increase the 'Scheduled Days' to **{suggested_days}**. "
+#                 f"This adds {additional_days} day(s) to the customer promise but ensures an +85% on-time delivery rate.")
+            
+#         elif cluster == 1:
+#             st.info("**Optimization Tip**: This profile is highly efficient. Continue using these parameters for this route.")
+#         st.subheader("Strategic Recommendation")
+#         st.warning("Action Recommended: Review Buffer")
+#         st.write("This order is in the 'Moderate' zone. Adding **1 extra day** to the schedule would likely shift this into the 'Low Risk' green zone.")
         
 # -------------------------
 # MAP VISUALIZATION
