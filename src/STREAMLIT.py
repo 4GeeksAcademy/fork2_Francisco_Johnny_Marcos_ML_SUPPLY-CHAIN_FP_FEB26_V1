@@ -274,7 +274,7 @@ if predict_button:
         # If the probability is safe, that is the primary recommendation
         if prob < 0.3:
             st.success("No Action Needed")
-            st.write(f"The updated schedule of **{scheduled_days} day(s)** has successfully lowered the risk. This order is now safe to process.")
+            st.write(f"The updated schedule of **{Days_for_shipment_scheduled} day(s)** has successfully lowered the risk. This order is now safe to process.")
         
         # If the probability is high, we must suggest a change, even for "Optimal" clusters
         elif prob >= 0.5:
